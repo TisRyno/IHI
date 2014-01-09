@@ -218,7 +218,7 @@ namespace IHI.Server.Database.Actions
             Dictionary<string, object> parameters = new Dictionary<string, object>();
             parameters["@habbo_id"] = habboId;
 
-            return CoreManager.ServerCore.MySqlConnectionProvider.HelperGetAction<int>("SELECT `last_access` FROM `habbos` WHERE `habbo_id` = @habbo_id", parameters, connection);
+            return CoreManager.ServerCore.MySqlConnectionProvider.HelperGetAction<int>("SELECT `credits` FROM `habbos` WHERE `habbo_id` = @habbo_id", parameters, connection);
         }
         #endregion
         #region Action: SetCreditsFromHabboId
