@@ -85,6 +85,11 @@ namespace IHI.Server
                             configFile = value;
                             break;
                         }
+                    case "basic-console":
+                        {
+                            Environment.SetEnvironmentVariable("IHI_BASIC_INSTALLER", value);
+                            break;
+                        }
                     default:
                         {
                             System.Console.WriteLine("Unknown command line argument (" + name + "=" + value + ")");
@@ -93,7 +98,11 @@ namespace IHI.Server
                 }
             }
             System.Console.WriteLine("Config location: " + configFile);
-            Environment.SetEnvironmentVariable("BLUEDOT_CONFIG_PATH", configFile);
+            Environment.SetEnvironmentVariable("IHI_CONFIG_PATH", configFile);
+
+            if (Environment.GetEnvironmentVariable("IHI_BASIC_INSTALLER") == "true")
+                System.Console.WriteLine("Basic Console Mode! The installer will not be used and will instead generate a config file filled with default values!");
+
 
             System.Console.WriteLine("Preparing server core...");
             CoreManager.InitialiseServerCore();

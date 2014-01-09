@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Xml.Xsl;
 using Cecer.ConsoleSplit;
+using IHI.Server.Configuration.Install;
 using IHI.Server.Console;
 using IHI.Server.Events;
 
@@ -18,120 +19,14 @@ namespace IHI.Server.Install
     {
         private readonly List<Step> _steps;
 
-
-        #region Console Layout
-        public ConsoleLayout ConsoleLayout
-        {
-            get;
-            private set;
-        }
-
-        private OutLogicalConsole _installerProgressConsole;
-        private OutLogicalConsole _installerTitleConsole;
-        private OutLogicalConsole _installerDescriptionConsole;
-        private InLogicalConsole _installerAnswerConsole;
-        private OutLogicalConsole _standardOutputConsole;
-
-        private void InitConsoleLayout()
-        {
-            ConsoleLayout = new ConsoleLayout();
-
-            _installerProgressConsole = new OutLogicalConsole(13, 1, 104, 3);
-            _installerTitleConsole = new OutLogicalConsole(116, 1, 2, 8);
-            _installerDescriptionConsole = new OutLogicalConsole(116, 7, 2, 10);
-            _installerAnswerConsole = new InLogicalConsole(116, 1, 2, 20);
-            _standardOutputConsole = new OutLogicalConsole(116, 11, 2, 27);
-
-            ConsoleLayout
-                .AddLogicalConsole(_installerProgressConsole)
-                .AddLogicalConsole(_installerTitleConsole)
-                .AddLogicalConsole(_installerDescriptionConsole)
-                .AddLogicalConsole(_installerAnswerConsole)
-                .AddLogicalConsole(_standardOutputConsole)
-                .Background = @"                                                                                                                        " + 
-                              @"    ######  ##  ##  ######  ##  ##  ######  ######  ######  ##      ##      ######  #####                               " + 
-                              @"      ##    ##  ##    ##    ### ##  ##        ##    ##  ##  ##      ##      ##      ##  ##  /-------------------------\ " + 
-                              @"      ##    ######    ##    ######  ######    ##    ######  ##      ##      ####    #####   | Question:               | " + 
-                              @"      ##    ##  ##    ##    ## ###      ##    ##    ##  ##  ##      ##      ##      ## ##   \-------------------------/ " + 
-                              @"    ######  ##  ##  ######  ##  ##  ######    ##    ##  ##  ######  ######  ######  ##  ##                              " + 
-                              @"                                                                                                                        " + 
-                              @" /--------------------------------------------------------------------------------------------------------------------\ " + 
-                              @" |                                                                                                                    | " + 
-                              @" >--------------------------------------------------------------------------------------------------------------------< " + 
-                              @" |                                                                                                                    | " + 
-                              @" |                                                                                                                    | " + 
-                              @" |                                                                                                                    | " + 
-                              @" |                                                                                                                    | " + 
-                              @" |                                                                                                                    | " + 
-                              @" |                                                                                                                    | " + 
-                              @" |                                                                                                                    | " + 
-                              @" \--------------------------------------------------------------------------------------------------------------------/ " + 
-                              @"                                                                                                                        " + 
-                              @" /--------------------------------------------------------------------------------------------------------------------\ " + 
-                              @" |                                                                                                                    | " + 
-                              @" \--------------------------------------------------------------------------------------------------------------------/ " + 
-                              @"                                                                                                                        " + 
-                              @"                                                                                                                        " + 
-                              @"                                                                                                                        " + 
-                              @"                                                                                                                        " + 
-                              @" /--------------------------------------------------------------------------------------------------------------------\ " + 
-                              @" |                                                                                                                    | " + 
-                              @" |                                                                                                                    | " + 
-                              @" |                                                                                                                    | " + 
-                              @" |                                                                                                                    | " + 
-                              @" |                                                                                                                    | " + 
-                              @" |                                                                                                                    | " + 
-                              @" |                                                                                                                    | " + 
-                              @" |                                                                                                                    | " + 
-                              @" |                                                                                                                    | " + 
-                              @" |                                                                                                                    | " + 
-                              @" |                                                                                                                    | " + 
-                              @" \--------------------------------------------------------------------------------------------------------------------/ " + 
-                              @"                                                                                                                       ";
-
-            CoreManager.ServerCore.EventManager.StrongBind<ConsoleOutputEventArgs>("stdout:after", eventArgs => 
-            {
-                lock (_standardOutputConsole)
-                {
-                    switch (eventArgs.Level)
-                    {
-                        case ConsoleOutputLevel.Debug:
-                            {
-                                _standardOutputConsole.ForegroundColor = ConsoleColor.DarkGray;
-                                break;
-                            }
-                        case ConsoleOutputLevel.Notice:
-                            {
-                                _standardOutputConsole.ForegroundColor = ConsoleColor.Gray;
-                                break;
-                            }
-                        case ConsoleOutputLevel.Important:
-                            {
-                                _standardOutputConsole.ForegroundColor = ConsoleColor.Green;
-                                break;
-                            }
-                        case ConsoleOutputLevel.Warning:
-                            {
-                                _standardOutputConsole.ForegroundColor = ConsoleColor.Yellow;
-                                break;
-                            }
-                        case ConsoleOutputLevel.Error:
-                            {
-                                _standardOutputConsole.ForegroundColor = ConsoleColor.Red;
-                                break;
-                            }
-                    }
-                    _standardOutputConsole.WriteLine("[" + eventArgs.Channel + "]" + eventArgs.Message);
-                }
-            });
-        }
-        #endregion
+        private InstallerLayout _installerLayout;
 
         internal Installer()
         {
             _steps = new List<Step>();
 
-            InitConsoleLayout();
+            if (Environment.GetEnvironmentVariable("IHI_BASIC_INSTALLER") == "true")
+                _installerLayout = new InstallerLayout();
         }
 
         public Installer AddStepIfMissing(Step step)
@@ -152,41 +47,50 @@ namespace IHI.Server.Install
             if (stepNumber < 0 || stepNumber >= _steps.Count)
                 throw new IndexOutOfRangeException();
 
-            _installerProgressConsole.Clear();
-            _installerProgressConsole.Write(stepNumber+1 + "/" + _steps.Count);
+            _installerLayout.ProgressConsole.Clear();
+            _installerLayout.ProgressConsole.Write(stepNumber + 1 + "/" + _steps.Count);
 
             Step step = _steps[stepNumber];
 
-            _installerTitleConsole.Clear();
-            _installerTitleConsole.Write(step.Title);
+            _installerLayout.TitleConsole.Clear();
+            _installerLayout.TitleConsole.Write(step.Title);
 
-            _installerDescriptionConsole.Clear();
-            _installerDescriptionConsole.WriteLine(step.Description);
+            _installerLayout.DescriptionConsole.Clear();
+            _installerLayout.DescriptionConsole.WriteLine(step.Description);
             if (step.Examples.Any())
             {
-                _installerDescriptionConsole.WriteLine();
-                _installerDescriptionConsole.WriteLine("Examples: \"" + String.Join("\",  ", step.Examples) + "\"");
+                _installerLayout.DescriptionConsole.WriteLine();
+                _installerLayout.DescriptionConsole.WriteLine("Examples: \"" + String.Join("\",  ", step.Examples) + "\"");
             }
 
             return step;
         }
 
-        private void RunStep(int stepNumber)
+        private void RunStep(int stepNumber, bool justDefault = false)
         {
-            Step step = DrawStep(stepNumber);
+            Step step;
+            string input;
+            if (!justDefault)
+            {
+                step = DrawStep(stepNumber);
 
-            string input = _installerAnswerConsole.ReadLine();
-
-            if (String.IsNullOrEmpty(input))
+                input = _installerLayout.AnswerConsole.ReadLine();
+                if (String.IsNullOrEmpty(input))
+                    input = step.Default;
+            }
+            else
+            {
+                step = _steps[stepNumber];
                 input = step.Default;
+            }
 
-            object[] invokeParams = { input, null};
+            object[] invokeParams = { input, null };
 
             while (!(bool)CoreManager.ServerCore.Config.GetType().GetMethod("TryParseValue").MakeGenericMethod(step.Type).Invoke(CoreManager.ServerCore.Config, invokeParams))
             {
                 CoreManager.ServerCore.ConsoleManager.Error("Install", "Bad input! \"" + input + "\" could not be parsed as type \"" + step.Type.FullName + "\"");
-                input = _installerAnswerConsole.ReadLine();
-                invokeParams = new object[] { input, null};
+                input = _installerLayout.AnswerConsole.ReadLine();
+                invokeParams = new object[] { input, null };
             }
             CoreManager.ServerCore.Config.SetValue(step.Path, invokeParams[1], true);
             CoreManager.ServerCore.ConsoleManager.Important("Install", "Config value set! " + step.Path + " has been set to \"" + input + "\"");
@@ -200,8 +104,22 @@ namespace IHI.Server.Install
                 return false;
             }
 
+            if (_installerLayout == null)
+            {
+                CoreManager.ServerCore.ConsoleManager.Notice("Install", "IHI_BASIC_INSTALLER is set. Using default values.");
+                CoreManager.ServerCore.ConsoleManager.Important("Install", "Installation tasks detected!");
+
+                for (int stepNumber = 0; stepNumber < _steps.Count; stepNumber++)
+                {
+                    RunStep(stepNumber, true);
+                }
+                CoreManager.ServerCore.ConsoleManager.Important("Install", "Installation finished!");
+
+                return true;
+            }
+
             ConsoleLayout originalLayout = CoreManager.ServerCore.ConsoleManager.ConsoleLayout;
-            CoreManager.ServerCore.ConsoleManager.ConsoleLayout = ConsoleLayout;
+            CoreManager.ServerCore.ConsoleManager.ConsoleLayout = _installerLayout.ConsoleLayout;
 
             CoreManager.ServerCore.ConsoleManager.Important("Install", "Installation tasks detected!");
 

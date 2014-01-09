@@ -83,6 +83,7 @@
   <ItemGroup>
     <Compile Include="Commands\CommandManager.cs" />
     <Compile Include="Configuration\ConfigValue.cs" />
+    <Compile Include="Configuration\Install\InstallerLayout.cs" />
     <Compile Include="Console\ConsoleLayout.cs" />
     <Compile Include="Console\ConsoleOutputLevel.cs" />
     <Compile Include="Console\ConsoleManager.cs" />

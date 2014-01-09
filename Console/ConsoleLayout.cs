@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Cecer.ConsoleSplit;
 
@@ -28,18 +29,19 @@ namespace IHI.Server.Console
         {
             System.Console.Clear();
             System.Console.SetCursorPosition(0, 0);
-            System.Console.Write(Background);
+            BackgroundDrawer();
         }
 
-        public string Background
+        public Action BackgroundDrawer
         {
-            get;
+            private get;
             set;
         }
 
         #region Method: ConsoleLayout (Constructor)
         public ConsoleLayout()
         {
+            CoreManager.ServerCore.ConsoleManager.InitializeConsoleLayoutSupport();
             _consoles = new List<LogicalConsole>();
         }
         #endregion

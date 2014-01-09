@@ -6,128 +6,6 @@ namespace IHI.Server.Console
 {
     public class ConsoleManager
     {
-        #region Default Console Layout
-        public ConsoleLayout DefaultConsoleLayout
-        {
-            get;
-            private set;
-        }
-
-        private OutLogicalConsole _standardOutputConsole;
-        private InLogicalConsole _inputConsole;
-        private OutLogicalConsole _inputReplyConsole;
-        private OutLogicalConsole _statsOutputConsole;
-
-        private void InitDefaultConsoleLayout()
-        {
-            DefaultConsoleLayout = new ConsoleLayout();
-
-            _standardOutputConsole = new OutLogicalConsole(65, 37, 53, 1);
-            _inputConsole = new InLogicalConsole(50, 3, 2, 35);
-            _inputReplyConsole = new OutLogicalConsole(50, 26, 2, 8);
-            _statsOutputConsole = new OutLogicalConsole(21, 5, 31, 2);
-
-            DefaultConsoleLayout
-                .AddLogicalConsole(_standardOutputConsole)
-                .AddLogicalConsole(_inputConsole)
-                .AddLogicalConsole(_inputReplyConsole)
-                .AddLogicalConsole(_statsOutputConsole)
-                .Background = @"                                                    /-----------------------------------------------------------------\ " +
-                              @"    ######  ##  ##  ######    /---------------------<                                                                 | " +
-                              @"      ##    ##  ##    ##      |                     |                                                                 | " +
-                              @"      ##    ######    ##      |                     |                                                                 | " +
-                              @"      ##    ##  ##    ##      |                     |                                                                 | " +
-                              @"    ######  ##  ##  ######    |                     |                                                                 | " +
-                              @"                              |                     |                                                                 | " +
-                              @" /----------------------------^---------------------<                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" >--------------------------------------------------<                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" |                                                  |                                                                 | " +
-                              @" \--------------------------------------------------^-----------------------------------------------------------------/ " +
-                              @"                                                                                                                       ";
-
-
-
-            CoreManager.ServerCore.EventManager.StrongBind<ConsoleOutputEventArgs>("stdout:after", eventArgs => 
-            {
-                lock (_standardOutputConsole)
-                {
-                    switch (eventArgs.Level)
-                    {
-                        case ConsoleOutputLevel.Debug:
-                            {
-                                _standardOutputConsole.ForegroundColor = ConsoleColor.DarkGray;
-                                break;
-                            }
-                        case ConsoleOutputLevel.Notice:
-                            {
-                                _standardOutputConsole.ForegroundColor = ConsoleColor.Gray;
-                                break;
-                            }
-                        case ConsoleOutputLevel.Important:
-                            {
-                                _standardOutputConsole.ForegroundColor = ConsoleColor.Green;
-                                break;
-                            }
-                        case ConsoleOutputLevel.Warning:
-                            {
-                                _standardOutputConsole.ForegroundColor = ConsoleColor.Yellow;
-                                break;
-                            }
-                        case ConsoleOutputLevel.Error:
-                            {
-                                _standardOutputConsole.ForegroundColor = ConsoleColor.Red;
-                                break;
-                            }
-                    }
-                    _standardOutputConsole.WriteLine("[" + eventArgs.Channel + "]" + eventArgs.Message);
-                }
-            });
-        }
-
-        internal void ReadInput()
-        {
-            while (true)
-            {
-                string inputLine = _inputConsole.ReadLine();
-
-                ConsoleInputEventArgs eventArgs = new ConsoleInputEventArgs(inputLine);
-
-                CoreManager.ServerCore.OfficalEventFirer.Fire("stdin:before", eventArgs);
-                if (!eventArgs.IsCancelled)
-                    CoreManager.ServerCore.OfficalEventFirer.Fire("stdin:after", eventArgs);
-            }
-        }
-
-        #endregion
-
         private ConsoleLayout _currentConsoleLayout;
         public ConsoleLayout ConsoleLayout
         {
@@ -137,6 +15,12 @@ namespace IHI.Server.Console
             }
             set
             {
+                if (ConsoleContainer.Instance == null)
+                {
+                    InitializeConsoleLayoutSupport();
+                    BasicConsole = false;
+                }
+
                 if (_currentConsoleLayout == value)
                     return;
 
@@ -151,12 +35,32 @@ namespace IHI.Server.Console
             }
         }
 
+        #region Property: BasicConsole
+        private bool _basicConsole = true;
+        /// <summary>
+        /// 
+        /// </summary>
+        public bool BasicConsole
+        {
+            get
+            {
+                return _basicConsole;
+            }
+            set
+            {
+                _basicConsole = value;
+            }
+        }
+        #endregion
+
         internal ConsoleManager()
         {
-            ConsoleContainer.Initialize(120, 40);
+        }
 
-            InitDefaultConsoleLayout();
-            ConsoleLayout = DefaultConsoleLayout;
+        public void InitializeConsoleLayoutSupport()
+        {
+            if (ConsoleContainer.Instance == null)
+                ConsoleContainer.Initialize(120, 40);
         }
 
         #region Standard Out
@@ -188,6 +92,45 @@ namespace IHI.Server.Console
 
         private void FireEvent(ConsoleOutputEventArgs eventArgs)
         {
+            if (BasicConsole && _currentConsoleLayout == null)
+            {
+                string level;
+                switch (eventArgs.Level)
+                {
+                    case ConsoleOutputLevel.Debug:
+                        {
+                            level = "Debug";
+                            break;
+                        }
+                    case ConsoleOutputLevel.Notice:
+                        {
+                            level = "Notice";
+                            break;
+                        }
+                    case ConsoleOutputLevel.Important:
+                        {
+                            level = "Important";
+                            break;
+                        }
+                    case ConsoleOutputLevel.Warning:
+                        {
+                            level = "Warning";
+                            break;
+                        }
+                    case ConsoleOutputLevel.Error:
+                        {
+                            level = "Error";
+                            break;
+                        }
+                    default:
+                        {
+                            level = "?????";
+                            break;
+                        }
+                }
+                System.Console.WriteLine("[{0}] [{1}] {2}", level, eventArgs.Channel, eventArgs.Message);
+            }
+
             CoreManager.ServerCore.OfficalEventFirer.Fire("stdout:before", eventArgs);
             if (!eventArgs.IsCancelled)
                 CoreManager.ServerCore.OfficalEventFirer.Fire("stdout:after", eventArgs);

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Net;
-using System.Threading.Tasks;
-using Cecer.ConsoleSplit;
 using IHI.Server.Console;
 using IHI.Server.Install;
 using IHI.Server.Plugins;
@@ -18,8 +16,6 @@ using IHI.Server.Network;
 
 using System.Collections.Generic;
 using IHI.Server.Network.GameSockets;
-using System.ComponentModel;
-using System.Threading;
 
 namespace IHI.Server
 {
@@ -176,13 +172,10 @@ namespace IHI.Server
                 if (!BootTaskConnectMySql())
                     return;
 
-                Task.WaitAll(new[]
-                                 {
-                                     Task.Factory.StartNew(BootTaskPreparePermissions),
-                                     Task.Factory.StartNew(BootTaskPrepareFigures),
-                                     Task.Factory.StartNew(BootTaskPrepareHabbos),
-                                     Task.Factory.StartNew(BootTaskPrepareRooms)
-                                 });
+                BootTaskPreparePermissions();
+                BootTaskPrepareFigures();
+                BootTaskPrepareHabbos();
+                BootTaskPrepareRooms();
 
                 BootTaskStartWebAdmin();
 
@@ -191,12 +184,6 @@ namespace IHI.Server
                 ConsoleManager.Important("Core", StringLocale.GetString("CORE:BOOT_COMPLETE"));
 
                 EventManager.WeakBind<ConsoleInputEventArgs>("stdin:after", ProcessTempInput);
-
-                new Thread(ConsoleManager.ReadInput)
-                {
-                    IsBackground = true,
-                    Name = "IHI-STDIN"
-                }.Start();
 
                 System.Console.Beep(500, 250);
             }
@@ -214,7 +201,7 @@ namespace IHI.Server
         #region Method: BootTaskLoadConfig
         private void BootTaskLoadConfig()
         {
-            string configPath = Environment.GetEnvironmentVariable("BLUEDOT_CONFIG_PATH");
+            string configPath = Environment.GetEnvironmentVariable("IHI_CONFIG_PATH");
 
             ConsoleManager.Notice("Boot", StringLocale.GetString("CORE:BOOT_LOADING_CONFIG_AT") + configPath);
             Config = new XmlConfig(configPath);
@@ -253,26 +240,22 @@ namespace IHI.Server
         #region Method: BootTaskLoadPlugins
         private void BootTaskLoadPlugins()
         {
-            List<Task> taskList = new List<Task>();
             ConsoleManager.Notice("Plugin Manager", StringLocale.GetString("CORE:BOOT_PLUGINS_LOADING"));
             foreach (string path in PluginManager.GetAllPotentialPluginPaths())
             {
-                taskList.Add(Task.Factory.StartNew(() => { PluginManager.LoadPluginAtPath(path); }));
+                PluginManager.LoadPluginAtPath(path);
             }
-            Task.WaitAll(taskList.ToArray());
             ConsoleManager.Notice("Plugin Manager", StringLocale.GetString("CORE:BOOT_PLUGINS_LOADED"));
         }
         #endregion
         #region Method: BootTaskStartPlugins
         private void BootTaskStartPlugins()
         {
-            List<Task> taskList = new List<Task>();
             ConsoleManager.Notice("Plugin Manager", StringLocale.GetString("CORE:BOOT_PLUGINS_STARTING"));
             foreach (Plugin plugin in PluginManager.GetLoadedPlugins())
             {
-                taskList.Add(Task.Factory.StartNew(() => { PluginManager.StartPlugin(plugin); }));
+                PluginManager.StartPlugin(plugin);
             }
-            Task.WaitAll(taskList.ToArray());
             ConsoleManager.Notice("Plugin Manager", StringLocale.GetString("CORE:BOOT_PLUGINS_STARTED"));
         }
         #endregion
