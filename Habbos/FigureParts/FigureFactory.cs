@@ -98,24 +98,24 @@ namespace IHI.Server.Rooms.Figure
             return figureInProgress;
         }
 
-        internal HabboFigureFactory RegisterSet(Type set)
+        public HabboFigureFactory RegisterSet(Type set)
         {
-            if (set.IsSubclassOf(typeof (FigureSet)))
-            {
-                ushort setId = (set.GetConstructors()[0].Invoke(new object[0]) as FigureSet).Id;
-                _figureSetIDs.Add(setId, set);
-            }
+            if (!set.IsSubclassOf(typeof (FigureSet)))
+                return this;
+
+            ushort setId = (set.GetConstructors()[0].Invoke(new object[0]) as FigureSet).Id;
+            _figureSetIDs.Add(setId, set);
             return this;
         }
 
-        internal HabboFigureFactory UnregisterModelId(Type part)
+        public HabboFigureFactory UnregisterSet(Type set)
         {
-            if (part.IsSubclassOf(typeof (FigureSet)))
-            {
-                ushort modelId = (part.GetConstructors()[0].Invoke(new object[0]) as FigureSet).Id;
-                if (_figureSetIDs.ContainsKey(modelId))
-                    _figureSetIDs.Remove(modelId);
-            }
+            if (!set.IsSubclassOf(typeof (FigureSet)))
+                return this;
+
+            ushort setId = (set.GetConstructors()[0].Invoke(new object[0]) as FigureSet).Id;
+            if (_figureSetIDs.ContainsKey(setId))
+                _figureSetIDs.Remove(setId);
             return this;
         }
     }
