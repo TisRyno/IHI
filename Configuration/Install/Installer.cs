@@ -25,7 +25,7 @@ namespace IHI.Server.Install
         {
             _steps = new List<Step>();
 
-            if (Environment.GetEnvironmentVariable("IHI_BASIC_INSTALLER") == "true")
+            if (Environment.GetEnvironmentVariable("IHI_BASIC_INSTALLER") != "true")
                 _installerLayout = new InstallerLayout();
         }
 
