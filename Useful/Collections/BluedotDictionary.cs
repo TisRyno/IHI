@@ -344,8 +344,13 @@ namespace IHI.Server.Useful
                 {
                     if (_weakDictionary[key].TryGetTarget(out value))
                         return true;
+
+                    if (value == null)
+                        value = LazyLoading.ValueFactory(key);
+
                     if (WeakReference.Values)
                         _weakDictionary[key] = new WeakReference<TValue>(value);
+
                     return true;
                 }
 
